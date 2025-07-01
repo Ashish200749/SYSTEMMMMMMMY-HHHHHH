@@ -1,0 +1,26 @@
+<!DOCTYPE html><html>
+<head><meta charset="utf-8"/>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+<style>body{margin:0;background:#000;color:#0f0;font-family:monospace;font-size:14px}pre{white-space:pre-wrap}</style>
+</head><body>
+<pre id="log">Loading Python and strategy...</pre>
+<script>
+(async()=>{
+  const py = await loadPyodide({indexURL:"https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"});
+  await py.loadPackage(["micropip","requests"]);
+  const code = await (await fetch("manual_predictor.py")).text();
+  py.runPython(code);
+
+  function log(t){document.getElementById('log').textContent += '\n' + t;}
+  window.processNumber = (n)=>{
+    py.globals.set("incoming", n);
+    py.runPython(`
+from js import incoming, log
+res = process(int(incoming))
+log(f">>> {incoming} → {res}")
+`);
+  };
+
+})();
+</script>
+</body></html>
