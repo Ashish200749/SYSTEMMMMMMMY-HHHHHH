@@ -1,0 +1,13 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "python/bridge.html",
+      "sha1": "45d9eb135db7e5050304820c25489a74dbe5cff0"
+    },
+    {
+      "path": "python/manual_predictor.py",
+      "sha1": "193d39d3b59827c989683716e12df10f324a34b3"
+    }
+  ]
+}

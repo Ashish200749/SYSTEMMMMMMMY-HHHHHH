@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Color Predictor</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #000; 
+            color: #0f0; 
+            font-size: 16px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        .log-area {
+            flex: 1;
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid #0f0;
+            padding: 10px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #222;
+            border-top: 1px solid #0f0;
+        }
+        .input-label {
+            color: #fff;
+            font-weight: bold;
+        }
+        .input-field {
+            background: #eee;
+            border: none;
+            padding: 10px;
+            width: 60px;
+            text-align: center;
+            font-size: 18px;
+            border-radius: 5px;
+        }
+        .send-button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .send-button:active {
+            background: #0a0;
+        }
+        .header {
+            background: #0f0;
+            color: #000;
+            text-align: center;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Color Predictor</div>
+        
+        <div class="log-area" id="log">Loading Python and strategy...</div>
+        
+        <div class="input-row">
+            <span class="input-label">Number:</span>
+            <input type="number" class="input-field" id="numberInput" min="0" max="9" maxlength="1" />
+            <button class="send-button" onclick="sendNumber()">Send</button>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="cordova.js"></script>
+    <script>
+        let pyodideInstance = null;
+        
+        document.addEventListener('deviceready', onDeviceReady, false);
+        
+        function onDeviceReady() {
+            initializePython();
+        }
+        
+        async function initializePython() {
+            try {
+                const py = await loadPyodide({indexURL:"https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"});
+                await py.loadPackage(["micropip","requests"]);
+                
+                // Load Python code
+                const response = await fetch("manual_predictor.py");
+                const code = await response.text();
+                py.runPython(code);
+                
+                pyodideInstance = py;
+                log("Python environment ready!");
+                log("Enter Jalwa result number (0-9) and tap Send");
+                
+                // Set up Python logging function
+                py.globals.set("log", log);
+                
+            } catch (error) {
+                log("Error loading Python: " + error.message);
+            }
+        }
+        
+        function log(text) {
+            const logElement = document.getElementById('log');
+            logElement.textContent += '\n' + text;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function sendNumber() {
+            const input = document.getElementById('numberInput');
+            const num = input.value;
+            
+            if (num.match(/^[0-9]$/)) {
+                if (pyodideInstance) {
+                    try {
+                        pyodideInstance.globals.set("incoming", parseInt(num));
+                        pyodideInstance.runPython(`
+from js import incoming, log
+res = process(int(incoming))
+log(f">>> {incoming} → {res}")
+                        `);
+                        input.value = "";
+                    } catch (error) {
+                        log("Error: " + error.message);
+                    }
+                } else {
+                    log("Python not ready yet, please wait...");
+                }
+            } else {
+                alert("Input must be 0-9");
+            }
+        }
+        
+        // Allow Enter key to submit
+        document.getElementById('numberInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendNumber();
+            }
+        });
+        
+        // If not in Cordova, initialize immediately
+        if (!window.cordova) {
+            initializePython();
+        }
+    </script>
+</body>
+</html>

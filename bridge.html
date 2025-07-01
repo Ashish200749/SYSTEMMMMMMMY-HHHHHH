@@ -8,7 +8,7 @@
 (async()=>{
   const py = await loadPyodide({indexURL:"https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"});
   await py.loadPackage(["micropip","requests"]);
-  const code = await (await fetch("manual_predictor.py")).text();
+  const code = await (await fetch("file:///android_asset/custom/manual_predictor.py")).text();
   py.runPython(code);
 
   function log(t){document.getElementById('log').textContent += '\n' + t;}
